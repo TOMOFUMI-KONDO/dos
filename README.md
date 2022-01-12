@@ -6,6 +6,8 @@ DoSはDenial of Serviceの略称で、攻撃対象のサーバーに対して大
 
 ## Sample
 
+PHP + Apacheの構成で動いているサービスに対し、Goのスクリプトから簡易的なDoS攻撃を行う。
+
 ### Prepare
 
 #### App Side
