@@ -1,46 +1,53 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"sync"
-	"time"
 )
 
-const (
-	concurrency     = 100
-	continuationSec = 10
+var (
+	url         string
+	concurrency int
 )
+
+func init() {
+	flag.IntVar(&concurrency, "c", 100, "concurrency")
+	flag.Parse()
+	fmt.Println(concurrency)
+}
 
 func main() {
+	if len(os.Args) < 2 {
+		log.Fatalln("specify server url")
+	}
+	url = os.Args[1]
 
 	var wg sync.WaitGroup
-	wg.Add(concurrency * continuationSec)
+	wg.Add(concurrency)
 
-	for i := 0; i < continuationSec; i++ {
-		fmt.Println(i)
+	fmt.Println("start")
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			defer wg.Done()
 
-		for j := 0; j < concurrency; j++ {
-			go func(i int) {
-				defer wg.Done()
+			resp, err := http.Get(url)
+			if err != nil {
+				log.Println(err)
+			}
 
-				resp, err := http.Get("http://localhost:8000")
-				if err != nil {
-					log.Fatalln(err)
-				}
-
-				_, err = io.ReadAll(resp.Body)
-				if err != nil {
-					log.Fatalln(err)
-				}
-				defer resp.Body.Close()
-			}(j)
-		}
-
-		time.Sleep(time.Second * 1)
+			_, err = io.ReadAll(resp.Body)
+			if err != nil {
+				log.Println(err)
+			}
+			defer resp.Body.Close()
+		}()
 	}
 
 	wg.Wait()
+	fmt.Println("done")
 }
